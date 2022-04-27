@@ -3,13 +3,17 @@ package org.legendofdragoon.fonteditor;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 public class LodFont {
-  public final Entry[] entries;
+  private final Path file;
 
+  public final Entry[] entries;
   private final byte[] data;
 
   public LodFont(final Path file) throws IOException {
+    this.file = file;
+
     this.data = Files.readAllBytes(file);
 
     final int count = MathHelper.get(this.data, 6, 2);
@@ -18,6 +22,10 @@ public class LodFont {
     for(int entryIndex = 0; entryIndex < count; entryIndex++) {
       this.entries[entryIndex] = new Entry(8 + entryIndex * 8);
     }
+  }
+
+  public void save() throws IOException {
+    Files.write(this.file, this.data, StandardOpenOption.TRUNCATE_EXISTING);
   }
 
   public int entryCount() {
@@ -46,6 +54,10 @@ public class LodFont {
     public int unknown() {
       return MathHelper.get(LodFont.this.data, this.offset + 2, 1);
     }
+
+    public void unknown(final int value) {
+      MathHelper.set(LodFont.this.data, this.offset + 2, 1, value);
+    }
   }
 
   public class Metrics {
@@ -59,40 +71,80 @@ public class LodFont {
       return MathHelper.get(LodFont.this.data, this.offset, 1);
     }
 
+    public void u(final int value) {
+      MathHelper.set(LodFont.this.data, this.offset, 1, value);
+    }
+
     public int v() {
       return MathHelper.get(LodFont.this.data, this.offset + 1, 1);
+    }
+
+    public void v(final int value) {
+      MathHelper.set(LodFont.this.data, this.offset + 1, 1, value);
     }
 
     public int x() {
       return MathHelper.get(LodFont.this.data, this.offset + 2, 1);
     }
 
+    public void x(final int value) {
+      MathHelper.set(LodFont.this.data, this.offset + 2, 1, value);
+    }
+
     public int y() {
       return MathHelper.get(LodFont.this.data, this.offset + 3, 1);
+    }
+
+    public void y(final int value) {
+      MathHelper.set(LodFont.this.data, this.offset + 3, 1, value);
     }
 
     public int clut() {
       return MathHelper.get(LodFont.this.data, this.offset + 4, 2);
     }
 
+    public void clut(final int value) {
+      MathHelper.set(LodFont.this.data, this.offset + 4, 2, value);
+    }
+
     public int tpage() {
       return MathHelper.get(LodFont.this.data, this.offset + 6, 2);
+    }
+
+    public void tpage(final int value) {
+      MathHelper.set(LodFont.this.data, this.offset + 6, 2, value);
     }
 
     public int width() {
       return MathHelper.get(LodFont.this.data, this.offset + 8, 2);
     }
 
+    public void width(final int value) {
+      MathHelper.set(LodFont.this.data, this.offset + 8, 2, value);
+    }
+
     public int height() {
       return MathHelper.get(LodFont.this.data, this.offset + 0xa, 2);
+    }
+
+    public void height(final int value) {
+      MathHelper.set(LodFont.this.data, this.offset + 0xa, 2, value);
     }
 
     public int unknown1() {
       return MathHelper.get(LodFont.this.data, this.offset + 0x10, 2);
     }
 
+    public void unknown1(final int value) {
+      MathHelper.set(LodFont.this.data, this.offset + 0x10, 2, value);
+    }
+
     public int unknown2() {
       return MathHelper.get(LodFont.this.data, this.offset + 0x12, 2);
+    }
+
+    public void unknown2(final int value) {
+      MathHelper.set(LodFont.this.data, this.offset + 0x12, 2, value);
     }
   }
 }

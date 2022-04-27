@@ -5,6 +5,7 @@ import org.legendofdragoon.fonteditor.MathHelper;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryStack;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
@@ -88,10 +89,22 @@ public class FontEditorGui extends Gui {
     this.setBufferText(this.unknown2Text, this.unknown2Length, String.valueOf(this.metrics.unknown2()));
   }
 
+  private void save() {
+    try {
+      this.lodFont.save();
+    } catch(final IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   private void setBufferText(final ByteBuffer text, final IntBuffer length, final String value) {
     text.clear();
     text.put(value.getBytes());
-    text.put((byte)0);
+
+    for(int i = 0; i < text.limit() - value.length(); i++) {
+      text.put((byte)0);
+    }
+
     text.flip();
 
     length.clear();
@@ -107,6 +120,14 @@ public class FontEditorGui extends Gui {
     text.reset();
 
     return new String(b);
+  }
+
+  private int getInt(final String str) {
+    try {
+      return Integer.parseInt(str);
+    } catch(final NumberFormatException e) {
+      return 0;
+    }
   }
 
   @Override
@@ -126,20 +147,20 @@ public class FontEditorGui extends Gui {
         this.label(manager, "Glyph:", TextAlign.RIGHT);
 
         row.nextColumn(0.25f);
-        final int glyphRes = this.textbox(manager, this.glyphIndexText, this.glyphIndexLength, 8);
+        final int glyphRes = this.numberbox(manager, this.glyphIndexText, this.glyphIndexLength, 8);
 
         if((glyphRes & NK_EDIT_COMMITED) != 0) {
-          this.displayGlyph(MathHelper.clamp(Integer.parseInt(this.getBufferText(this.glyphIndexText, this.glyphIndexLength)), 0, this.lodFont.entries.length - 1), 0);
+          this.displayGlyph(MathHelper.clamp(this.getInt(this.getBufferText(this.glyphIndexText, this.glyphIndexLength)), 0, this.lodFont.entries.length - 1), 0);
         }
 
         row.nextColumn(0.20f);
         this.label(manager, "Part:", TextAlign.RIGHT);
 
         row.nextColumn(0.25f);
-        final int metricsRes = this.textbox(manager, this.metricsIndexText, this.metricsIndexLength, 8);
+        final int metricsRes = this.numberbox(manager, this.metricsIndexText, this.metricsIndexLength, 8);
 
         if((metricsRes & NK_EDIT_COMMITED) != 0) {
-          this.displayGlyph(this.glyphIndex, MathHelper.clamp(Integer.parseInt(this.getBufferText(this.metricsIndexText, this.metricsIndexLength)), 0, this.glyph.metrics.length - 1));
+          this.displayGlyph(this.glyphIndex, MathHelper.clamp(this.getInt(this.getBufferText(this.metricsIndexText, this.metricsIndexLength)), 0, this.glyph.metrics.length - 1));
         }
 
         row.nextColumn(0.10f);
@@ -153,7 +174,11 @@ public class FontEditorGui extends Gui {
         this.label(manager, "?:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        this.numberbox(manager, this.unknown0Text, this.unknown0Length, 8);
+        final int res = this.numberbox(manager, this.unknown0Text, this.unknown0Length, 8);
+
+        if((res & NK_EDIT_COMMITED) != 0) {
+          this.glyph.unknown(this.getInt(this.getBufferText(this.unknown0Text, this.unknown0Length)));
+        }
 
         row.nextColumn(0.5f);
       });
@@ -165,13 +190,21 @@ public class FontEditorGui extends Gui {
         this.label(manager, "U:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        this.numberbox(manager, this.uText, this.uLength, 8);
+        final int uRes = this.numberbox(manager, this.uText, this.uLength, 8);
+
+        if((uRes & NK_EDIT_COMMITED) != 0) {
+          this.metrics.u(this.getInt(this.getBufferText(this.uText, this.uLength)));
+        }
 
         row.nextColumn(0.05f);
         this.label(manager, "V:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        this.numberbox(manager, this.vText, this.vLength, 8);
+        final int vRes = this.numberbox(manager, this.vText, this.vLength, 8);
+
+        if((vRes & NK_EDIT_COMMITED) != 0) {
+          this.metrics.v(this.getInt(this.getBufferText(this.vText, this.vLength)));
+        }
       });
 
       this.row(manager, 30.0f, 4, row -> {
@@ -179,13 +212,21 @@ public class FontEditorGui extends Gui {
         this.label(manager, "X:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        this.numberbox(manager, this.xText, this.xLength, 8);
+        final int xRes = this.numberbox(manager, this.xText, this.xLength, 8);
+
+        if((xRes & NK_EDIT_COMMITED) != 0) {
+          this.metrics.x(this.getInt(this.getBufferText(this.xText, this.xLength)));
+        }
 
         row.nextColumn(0.05f);
         this.label(manager, "Y:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        this.numberbox(manager, this.yText, this.yLength, 8);
+        final int yRes = this.numberbox(manager, this.yText, this.yLength, 8);
+
+        if((yRes & NK_EDIT_COMMITED) != 0) {
+          this.metrics.y(this.getInt(this.getBufferText(this.yText, this.yLength)));
+        }
       });
 
       this.row(manager, 30.0f, 4, row -> {
@@ -193,13 +234,21 @@ public class FontEditorGui extends Gui {
         this.label(manager, "W:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        this.numberbox(manager, this.wText, this.wLength, 8);
+        final int wRes = this.numberbox(manager, this.wText, this.wLength, 8);
+
+        if((wRes & NK_EDIT_COMMITED) != 0) {
+          this.metrics.width(this.getInt(this.getBufferText(this.wText, this.wLength)));
+        }
 
         row.nextColumn(0.05f);
         this.label(manager, "H:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        this.numberbox(manager, this.hText, this.hLength, 8);
+        final int hRes = this.numberbox(manager, this.hText, this.hLength, 8);
+
+        if((hRes & NK_EDIT_COMMITED) != 0) {
+          this.metrics.height(this.getInt(this.getBufferText(this.hText, this.hLength)));
+        }
       });
 
       this.row(manager, 30.0f, 4, row -> {
@@ -207,13 +256,21 @@ public class FontEditorGui extends Gui {
         this.label(manager, "CLUT:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        this.numberbox(manager, this.clutText, this.clutLength, 8);
+        final int clutRes = this.numberbox(manager, this.clutText, this.clutLength, 8);
+
+        if((clutRes & NK_EDIT_COMMITED) != 0) {
+          this.metrics.clut(this.getInt(this.getBufferText(this.clutText, this.clutLength)));
+        }
 
         row.nextColumn(0.05f);
         this.label(manager, "TPAGE:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        this.numberbox(manager, this.tpageText, this.tpageLength, 8);
+        final int tpageRes = this.numberbox(manager, this.tpageText, this.tpageLength, 8);
+
+        if((tpageRes & NK_EDIT_COMMITED) != 0) {
+          this.metrics.tpage(this.getInt(this.getBufferText(this.tpageText, this.tpageLength)));
+        }
       });
 
       this.row(manager, 30.0f, 4, row -> {
@@ -221,13 +278,28 @@ public class FontEditorGui extends Gui {
         this.label(manager, "?1:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        this.numberbox(manager, this.unknown1Text, this.unknown1Length, 8);
+        final int u1Res = this.numberbox(manager, this.unknown1Text, this.unknown1Length, 8);
+
+        if((u1Res & NK_EDIT_COMMITED) != 0) {
+          this.metrics.unknown1(this.getInt(this.getBufferText(this.unknown1Text, this.unknown1Length)));
+        }
 
         row.nextColumn(0.05f);
         this.label(manager, "?2:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        this.numberbox(manager, this.unknown2Text, this.unknown2Length, 8);
+        final int u2Res = this.numberbox(manager, this.unknown2Text, this.unknown2Length, 8);
+
+        if((u2Res & NK_EDIT_COMMITED) != 0) {
+          this.metrics.unknown2(this.getInt(this.getBufferText(this.unknown2Text, this.unknown2Length)));
+        }
+      });
+
+      this.row(manager, 5.0f, 1);
+
+      this.row(manager, 30.0f, 1, row -> {
+        row.nextColumn(1.0f);
+        this.button(manager, "Save", this::save);
       });
     });
   }

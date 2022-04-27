@@ -60,3 +60,17 @@ dependencies {
 test {
   useJUnitPlatform()
 }
+
+jar {
+  manifest {
+    attributes(
+      'Main-Class': 'org.legendofdragoon.fonteditor.Main'
+    )
+  }
+
+  from {
+    configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+  } {
+    exclude "META-INF/**"
+  }
+}
