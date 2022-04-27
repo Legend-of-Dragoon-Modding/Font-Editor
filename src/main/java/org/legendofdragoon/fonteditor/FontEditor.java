@@ -11,7 +11,6 @@ import org.legendofdragoon.fonteditor.opengl.Texture;
 import org.legendofdragoon.fonteditor.opengl.Window;
 import org.lwjgl.glfw.GLFW;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -39,7 +38,7 @@ public class FontEditor {
     final Font font = new Font("gfx/fonts/Consolas.ttf");
     this.guiManager.setFont(font);
 
-    final LodFont lodFont = new LodFont(new FileInputStream(Path.of("./font.dat").toFile()));
+    final LodFont lodFont = new LodFont(Path.of("./font.dat"));
     final Texture fontTexture = Texture.create(texture -> {
       texture.png(Path.of("./font.png"));
       texture.dataFormat(GL_RGBA);

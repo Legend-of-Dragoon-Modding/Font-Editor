@@ -1,85 +1,98 @@
 package org.legendofdragoon.fonteditor;
 
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class LodFont {
   public final Entry[] entries;
 
-  public LodFont(final FileInputStream input) throws IOException {
-    input.skip(6);
+  private final byte[] data;
 
-    final int count = (int)MathHelper.get(input.readNBytes(2), 0, 2);
+  public LodFont(final Path file) throws IOException {
+    this.data = Files.readAllBytes(file);
+
+    final int count = MathHelper.get(this.data, 6, 2);
     this.entries = new Entry[count];
 
-    final byte[] entryData = input.readNBytes(count * 8);
-
     for(int entryIndex = 0; entryIndex < count; entryIndex++) {
-      final long index = MathHelper.get(entryData, entryIndex * 8, 2);
-      input.getChannel().position(8 + count * 8 + index * 4);
-
-      final int metricsOffset = (int)MathHelper.get(input.readNBytes(4), 0, 4);
-      input.getChannel().position(metricsOffset);
-
-      final int metricsCount = (int)MathHelper.get(input.readNBytes(4), 0, 4);
-      final byte[] metricsData = input.readNBytes(metricsCount * 0x14);
-      final Metrics[] metrics = new Metrics[metricsCount];
-
-      for(int metricsIndex = 0; metricsIndex < metricsCount; metricsIndex++) {
-        final int u = metricsData[metricsIndex * 0x14] & 0xff;
-        final int v = metricsData[metricsIndex * 0x14 + 1] & 0xff;
-        final int x = metricsData[metricsIndex * 0x14 + 2] & 0xff;
-        final int y = metricsData[metricsIndex * 0x14 + 3] & 0xff;
-        final int clut = (int)MathHelper.get(metricsData, metricsIndex * 0x14 + 4, 2);
-        final int tpage = (int)MathHelper.get(metricsData, metricsIndex * 0x14 + 6, 2);
-        final int width = (int)MathHelper.get(metricsData, metricsIndex * 0x14 + 8, 2);
-        final int height = (int)MathHelper.get(metricsData, metricsIndex * 0x14 + 10, 2);
-        final int unknown1 = (int)MathHelper.get(metricsData, metricsIndex * 0x14 + 0x10, 2);
-        final int unknown2 = (int)MathHelper.get(metricsData, metricsIndex * 0x14 + 0x12, 2);
-        metrics[metricsIndex] = new Metrics(u, v, x, y, clut, tpage, width, height, unknown1, unknown2);
-      }
-
-      this.entries[entryIndex] = new Entry(metricsOffset, entryData[entryIndex * 8 + 2], metrics);
+      this.entries[entryIndex] = new Entry(8 + entryIndex * 8);
     }
   }
 
-  public static class Entry {
-    public final int index;
-    public final int unknown;
+  public int entryCount() {
+    return MathHelper.get(this.data, 6, 2);
+  }
+
+  public class Entry {
+    private final int offset;
 
     public final Metrics[] metrics;
 
-    public Entry(final int index, final int unknown, final Metrics[] metrics) {
-      this.index = index;
-      this.unknown = unknown;
+    public Entry(final int offset) {
+      this.offset = offset;
 
-      this.metrics = metrics;
+      final int dataIndex = MathHelper.get(LodFont.this.data, offset, 2);
+      final int metricsOffset = MathHelper.get(LodFont.this.data, 8 + LodFont.this.entryCount() * 8 + dataIndex * 4, 4);
+      final int metricsCount = MathHelper.get(LodFont.this.data, metricsOffset, 4);
+
+      this.metrics = new Metrics[metricsCount];
+
+      for(int metricsIndex = 0; metricsIndex < metricsCount; metricsIndex++) {
+        this.metrics[metricsIndex] = new Metrics(metricsOffset + 4 + metricsIndex * 0x14);
+      }
+    }
+
+    public int unknown() {
+      return MathHelper.get(LodFont.this.data, this.offset + 2, 1);
     }
   }
 
-  public static class Metrics {
-    public final int u;
-    public final int v;
-    public final int x;
-    public final int y;
-    public final int clut;
-    public final int tpage;
-    public final int width;
-    public final int height;
-    public final int unknown1;
-    public final int unknown2;
+  public class Metrics {
+    private final int offset;
 
-    public Metrics(final int u, final int v, final int x, final int y, final int clut, final int tpage, final int width, final int height, final int unknown1, final int unknown2) {
-      this.u = u;
-      this.v = v;
-      this.x = x;
-      this.y = y;
-      this.clut = clut;
-      this.tpage = tpage;
-      this.width = width;
-      this.height = height;
-      this.unknown1 = unknown1;
-      this.unknown2 = unknown2;
+    public Metrics(final int offset) {
+      this.offset = offset;
+    }
+
+    public int u() {
+      return MathHelper.get(LodFont.this.data, this.offset, 1);
+    }
+
+    public int v() {
+      return MathHelper.get(LodFont.this.data, this.offset + 1, 1);
+    }
+
+    public int x() {
+      return MathHelper.get(LodFont.this.data, this.offset + 2, 1);
+    }
+
+    public int y() {
+      return MathHelper.get(LodFont.this.data, this.offset + 3, 1);
+    }
+
+    public int clut() {
+      return MathHelper.get(LodFont.this.data, this.offset + 4, 2);
+    }
+
+    public int tpage() {
+      return MathHelper.get(LodFont.this.data, this.offset + 6, 2);
+    }
+
+    public int width() {
+      return MathHelper.get(LodFont.this.data, this.offset + 8, 2);
+    }
+
+    public int height() {
+      return MathHelper.get(LodFont.this.data, this.offset + 0xa, 2);
+    }
+
+    public int unknown1() {
+      return MathHelper.get(LodFont.this.data, this.offset + 0x10, 2);
+    }
+
+    public int unknown2() {
+      return MathHelper.get(LodFont.this.data, this.offset + 0x12, 2);
     }
   }
 }

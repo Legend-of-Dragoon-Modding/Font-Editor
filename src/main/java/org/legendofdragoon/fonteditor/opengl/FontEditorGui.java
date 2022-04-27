@@ -17,6 +17,9 @@ public class FontEditorGui extends Gui {
   private int glyphIndex;
   private int metricsIndex;
 
+  private LodFont.Entry glyph;
+  private LodFont.Metrics metrics;
+
   private final ByteBuffer glyphIndexText = BufferUtils.createByteBuffer(9);
   private final IntBuffer glyphIndexLength = BufferUtils.createIntBuffer(1);
   private final ByteBuffer metricsIndexText = BufferUtils.createByteBuffer(9);
@@ -54,7 +57,7 @@ public class FontEditorGui extends Gui {
   }
 
   public void scrollGlyph(final long amount) {
-    this.displayGlyph(Math.floorMod(this.glyphIndex + (int)amount, this.lodFont.entries.length), 0);
+    this.displayGlyph(Math.floorMod(this.glyphIndex + (int)amount, this.lodFont.entryCount()), 0);
   }
 
   public void scrollMetrics(final long amount) {
@@ -65,23 +68,24 @@ public class FontEditorGui extends Gui {
     this.glyphIndex = glyphIndex;
     this.metricsIndex = metricsIndex;
 
+    this.glyph = this.lodFont.entries[this.glyphIndex];
+    this.metrics = this.glyph.metrics[this.metricsIndex];
+
     this.setBufferText(this.glyphIndexText, this.glyphIndexLength, String.valueOf(glyphIndex));
     this.setBufferText(this.metricsIndexText, this.metricsIndexLength, String.valueOf(metricsIndex));
 
-    this.setBufferText(this.unknown0Text, this.unknown0Length, String.valueOf(this.lodFont.entries[glyphIndex].unknown));
+    this.setBufferText(this.unknown0Text, this.unknown0Length, String.valueOf(this.glyph.unknown()));
 
-    final LodFont.Metrics metrics = this.lodFont.entries[glyphIndex].metrics[metricsIndex];
-
-    this.setBufferText(this.uText, this.uLength, String.valueOf(metrics.u));
-    this.setBufferText(this.vText, this.vLength, String.valueOf(metrics.v));
-    this.setBufferText(this.xText, this.xLength, String.valueOf(metrics.x));
-    this.setBufferText(this.yText, this.yLength, String.valueOf(metrics.y));
-    this.setBufferText(this.wText, this.wLength, String.valueOf(metrics.width));
-    this.setBufferText(this.hText, this.hLength, String.valueOf(metrics.height));
-    this.setBufferText(this.clutText, this.clutLength, String.valueOf(metrics.clut));
-    this.setBufferText(this.tpageText, this.tpageLength, String.valueOf(metrics.tpage));
-    this.setBufferText(this.unknown1Text, this.unknown1Length, String.valueOf(metrics.unknown1));
-    this.setBufferText(this.unknown2Text, this.unknown2Length, String.valueOf(metrics.unknown2));
+    this.setBufferText(this.uText, this.uLength, String.valueOf(this.metrics.u()));
+    this.setBufferText(this.vText, this.vLength, String.valueOf(this.metrics.v()));
+    this.setBufferText(this.xText, this.xLength, String.valueOf(this.metrics.x()));
+    this.setBufferText(this.yText, this.yLength, String.valueOf(this.metrics.y()));
+    this.setBufferText(this.wText, this.wLength, String.valueOf(this.metrics.width()));
+    this.setBufferText(this.hText, this.hLength, String.valueOf(this.metrics.height()));
+    this.setBufferText(this.clutText, this.clutLength, String.valueOf(this.metrics.clut()));
+    this.setBufferText(this.tpageText, this.tpageLength, String.valueOf(this.metrics.tpage()));
+    this.setBufferText(this.unknown1Text, this.unknown1Length, String.valueOf(this.metrics.unknown1()));
+    this.setBufferText(this.unknown2Text, this.unknown2Length, String.valueOf(this.metrics.unknown2()));
   }
 
   private void setBufferText(final ByteBuffer text, final IntBuffer length, final String value) {
@@ -112,8 +116,7 @@ public class FontEditorGui extends Gui {
         row.nextColumn(this.texture.width);
         this.image(manager, stack, this.texture, 0, 0);
 
-        final LodFont.Metrics metrics = this.lodFont.entries[this.glyphIndex].metrics[this.metricsIndex];
-        this.rect(manager, stack, metrics.u, metrics.v, metrics.width, metrics.height, 255, 0, 255);
+        this.rect(manager, stack, this.metrics.u(), this.metrics.v(), this.metrics.width(), this.metrics.height(), 255, 0, 255);
       });
 
       this.row(manager, 5.0f, 1);
@@ -136,11 +139,11 @@ public class FontEditorGui extends Gui {
         final int metricsRes = this.textbox(manager, this.metricsIndexText, this.metricsIndexLength, 8);
 
         if((metricsRes & NK_EDIT_COMMITED) != 0) {
-          this.displayGlyph(this.glyphIndex, MathHelper.clamp(Integer.parseInt(this.getBufferText(this.metricsIndexText, this.metricsIndexLength)), 0, this.lodFont.entries[this.glyphIndex].metrics.length - 1));
+          this.displayGlyph(this.glyphIndex, MathHelper.clamp(Integer.parseInt(this.getBufferText(this.metricsIndexText, this.metricsIndexLength)), 0, this.glyph.metrics.length - 1));
         }
 
         row.nextColumn(0.10f);
-        this.label(manager, "/" + (this.lodFont.entries[this.glyphIndex].metrics.length - 1));
+        this.label(manager, "/" + (this.glyph.metrics.length - 1));
       });
 
       this.row(manager, 5.0f, 1);

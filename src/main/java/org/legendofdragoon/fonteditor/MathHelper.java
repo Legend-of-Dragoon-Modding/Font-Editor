@@ -7,8 +7,8 @@ public final class MathHelper {
     return Math.max(min, Math.min(value, max));
   }
 
-  public static long get(final byte[] data, final int offset, final int size) {
-    long value = 0;
+  public static int get(final byte[] data, final int offset, final int size) {
+    int value = 0;
 
     for(int i = 0; i < size; i++) {
       value |= (long)(data[offset + i] & 0xff) << i * 8;
