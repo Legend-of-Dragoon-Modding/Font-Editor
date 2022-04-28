@@ -7,20 +7,22 @@ import java.nio.file.StandardOpenOption;
 
 public class LodFont {
   private final Path file;
+  private final int offset;
 
   public final Entry[] entries;
   private final byte[] data;
 
-  public LodFont(final Path file) throws IOException {
+  public LodFont(final Path file, final int offset) throws IOException {
     this.file = file;
+    this.offset = offset;
 
     this.data = Files.readAllBytes(file);
 
-    final int count = MathHelper.get(this.data, 6, 2);
+    final int count = this.entryCount();
     this.entries = new Entry[count];
 
     for(int entryIndex = 0; entryIndex < count; entryIndex++) {
-      this.entries[entryIndex] = new Entry(8 + entryIndex * 8);
+      this.entries[entryIndex] = new Entry(offset + 8 + entryIndex * 8);
     }
   }
 
@@ -29,7 +31,7 @@ public class LodFont {
   }
 
   public int entryCount() {
-    return MathHelper.get(this.data, 6, 2);
+    return MathHelper.get(this.data, this.offset + 6, 2);
   }
 
   public class Entry {
@@ -41,7 +43,7 @@ public class LodFont {
       this.offset = offset;
 
       final int dataIndex = MathHelper.get(LodFont.this.data, offset, 2);
-      final int metricsOffset = MathHelper.get(LodFont.this.data, 8 + LodFont.this.entryCount() * 8 + dataIndex * 4, 4);
+      final int metricsOffset = LodFont.this.offset + MathHelper.get(LodFont.this.data, LodFont.this.offset + 8 + LodFont.this.entryCount() * 8 + dataIndex * 4, 4);
       final int metricsCount = MathHelper.get(LodFont.this.data, metricsOffset, 4);
 
       this.metrics = new Metrics[metricsCount];

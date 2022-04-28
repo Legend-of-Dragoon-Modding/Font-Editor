@@ -27,7 +27,7 @@ public class FontEditor {
   private float scrollY;
   private boolean shift;
 
-  public FontEditor() throws IOException {
+  public FontEditor(final Path metrics, final Path png, final int offset) throws IOException {
     this.camera = new Camera(0.0f, 0.0f);
     this.window = new Window("Font Editor", 1280, 720);
     this.ctx = new Context(this.window, this.camera);
@@ -38,9 +38,9 @@ public class FontEditor {
     final Font font = new Font("gfx/fonts/Consolas.ttf");
     this.guiManager.setFont(font);
 
-    final LodFont lodFont = new LodFont(Path.of("./font.dat"));
+    final LodFont lodFont = new LodFont(metrics, offset);
     final Texture fontTexture = Texture.create(texture -> {
-      texture.png(Path.of("./font.png"));
+      texture.png(png);
       texture.dataFormat(GL_RGBA);
       texture.internalFormat(GL_RGBA);
     });
