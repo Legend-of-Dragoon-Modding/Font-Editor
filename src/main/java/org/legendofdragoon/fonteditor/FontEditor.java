@@ -5,7 +5,6 @@ import org.apache.logging.log4j.Logger;
 import org.legendofdragoon.fonteditor.opengl.Camera;
 import org.legendofdragoon.fonteditor.opengl.Context;
 import org.legendofdragoon.fonteditor.opengl.Font;
-import org.legendofdragoon.fonteditor.opengl.FontEditorGui;
 import org.legendofdragoon.fonteditor.opengl.GuiManager;
 import org.legendofdragoon.fonteditor.opengl.Texture;
 import org.legendofdragoon.fonteditor.opengl.Window;
@@ -60,14 +59,14 @@ public class FontEditor {
     });
 
     this.window.events.onMouseScroll((window, deltaX, deltaY) -> {
-      if(Math.signum(this.scrollY) != Math.signum(deltaY)) {
+      if(Math.signum(this.scrollY) != -Math.signum(deltaY)) {
         this.scrollY = 0;
       }
 
       this.scrollY -= deltaY;
 
       if(Math.abs(this.scrollY) >= 1.0f) {
-        final int scrollAmount = (int)Math.floor(this.scrollY);
+        final int scrollAmount = (int)Math.signum(this.scrollY);
         this.scrollY -= scrollAmount;
 
         if(!this.shift) {
@@ -91,6 +90,7 @@ public class FontEditor {
     } finally {
       this.guiManager.free();
       font.free();
+      Window.free();
     }
   }
 }

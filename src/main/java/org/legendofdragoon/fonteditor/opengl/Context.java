@@ -87,10 +87,6 @@ public class Context {
   }
 
   private void draw() {
-    //TODO: for some reason it's extremely laggy on my Intel UHD620 with vsync enabled... but this fixes it
-    //      https://discourse.glfw.org/t/swap-interval-n-cause-1-n-fps-except-if-glgeterror-is-called/1298/3
-    glGetError();
-
     glViewport(0, 0, this.width, this.height);
     this.pre();
     this.onDraw.run();

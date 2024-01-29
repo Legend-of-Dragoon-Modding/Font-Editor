@@ -1,5 +1,7 @@
 package org.legendofdragoon.fonteditor;
 
+import org.lwjgl.system.Configuration;
+
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -7,6 +9,8 @@ public final class Main {
   private Main() { }
 
   public static void main(final String[] args) throws IOException {
+    Configuration.DEBUG_MEMORY_ALLOCATOR.set(true);
+
     if(args.length < 2 || args.length > 3) {
       System.err.println("Expected args: <metrics file> <font png> [<metrics offset (hex)>]");
       return;

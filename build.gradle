@@ -7,9 +7,9 @@ plugins {
 group 'org.legendofdragoon'
 version '1.0-SNAPSHOT'
 
-sourceCompatibility = targetCompatibility = 1.17
+sourceCompatibility = targetCompatibility = 1.21
 
-project.ext.lwjglVersion = "3.2.3"
+project.ext.lwjglVersion = "3.3.3"
 project.ext.jomlVersion = "1.10.1"
 
 if(DefaultNativePlatform.getCurrentOperatingSystem().isWindows()) {

@@ -1,10 +1,11 @@
 package org.legendofdragoon.fonteditor.opengl;
 
 import org.lwjgl.nuklear.NkColor;
+import org.lwjgl.nuklear.NkContext;
 import org.lwjgl.nuklear.NkImage;
 import org.lwjgl.nuklear.NkRect;
-import org.lwjgl.nuklear.Nuklear;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.NativeType;
 
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
@@ -27,7 +28,6 @@ import static org.lwjgl.nuklear.Nuklear.nk_begin;
 import static org.lwjgl.nuklear.Nuklear.nk_button_label;
 import static org.lwjgl.nuklear.Nuklear.nk_draw_image;
 import static org.lwjgl.nuklear.Nuklear.nk_edit_focus;
-import static org.lwjgl.nuklear.Nuklear.nk_edit_string;
 import static org.lwjgl.nuklear.Nuklear.nk_end;
 import static org.lwjgl.nuklear.Nuklear.nk_image_id;
 import static org.lwjgl.nuklear.Nuklear.nk_label;
@@ -45,7 +45,12 @@ import static org.lwjgl.nuklear.Nuklear.nk_recti;
 import static org.lwjgl.nuklear.Nuklear.nk_rgb;
 import static org.lwjgl.nuklear.Nuklear.nk_stroke_rect;
 import static org.lwjgl.nuklear.Nuklear.nk_window_get_canvas;
+import static org.lwjgl.nuklear.Nuklear.nnk_edit_string;
+import static org.lwjgl.system.Checks.CHECKS;
+import static org.lwjgl.system.Checks.check;
+import static org.lwjgl.system.Checks.checkNT1;
 import static org.lwjgl.system.MemoryStack.stackPush;
+import static org.lwjgl.system.MemoryUtil.memAddress;
 
 public abstract class Gui {
   private boolean firstDraw = true;
@@ -71,7 +76,7 @@ public abstract class Gui {
   // Control rendering from here down
 
   protected void window(final GuiManager manager, final MemoryStack stack, final String title, final int x, final int y, final int w, final int h, final Runnable renderer) {
-    final NkRect rect = NkRect.mallocStack(stack);
+    final NkRect rect = NkRect.malloc(stack);
 
     if(nk_begin(manager.ctx, title, nk_recti(x, y, w, h, rect), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
       renderer.run();
@@ -79,7 +84,7 @@ public abstract class Gui {
   }
 
   protected void simpleWindow(final GuiManager manager, final MemoryStack stack, final String title, final int x, final int y, final int w, final int h, final Runnable renderer) {
-    final NkRect rect = NkRect.mallocStack(stack);
+    final NkRect rect = NkRect.malloc(stack);
 
     if(nk_begin(manager.ctx, title, nk_recti(x, y, w, h, rect), NK_WINDOW_BACKGROUND)) {
       renderer.run();
@@ -121,11 +126,21 @@ public abstract class Gui {
   }
 
   protected int textbox(final GuiManager manager, final ByteBuffer text, final IntBuffer length, final int maxLength) {
-    return nk_edit_string(manager.ctx, NK_EDIT_FIELD | NK_EDIT_SIG_ENTER, text, length, maxLength + 1, Nuklear::nnk_filter_ascii);
+    return nk_edit_string(manager.ctx, NK_EDIT_FIELD | NK_EDIT_SIG_ENTER, text, length, maxLength + 1, GuiManager.FILTER_ASCII);
   }
 
   protected int numberbox(final GuiManager manager, final ByteBuffer text, final IntBuffer length, final int maxLength) {
-    return nk_edit_string(manager.ctx, NK_EDIT_FIELD | NK_EDIT_SIG_ENTER, text, length, maxLength + 1, Nuklear::nnk_filter_decimal);
+    return nk_edit_string(manager.ctx, NK_EDIT_FIELD | NK_EDIT_SIG_ENTER, text, length, maxLength + 1, GuiManager.FILTER_DECIMAL);
+  }
+
+  /** Fix memory leak <a href="https://github.com/LWJGL/lwjgl3/issues/959">(issue here)</a> */
+  @NativeType("nk_flags")
+  public static int nk_edit_string(@NativeType("struct nk_context *") final NkContext ctx, @NativeType("nk_flags") final int flags, @NativeType("char *") final ByteBuffer memory, @NativeType("int *") final IntBuffer len, final int max, final long filter) {
+    if(CHECKS) {
+      checkNT1(memory);
+      check(len, 1);
+    }
+    return nnk_edit_string(ctx.address(), flags, memAddress(memory), memAddress(len), max, filter);
   }
 
   protected void button(final GuiManager manager, final String title, final Runnable onClick) {
@@ -153,13 +168,13 @@ public abstract class Gui {
   }
 
   protected void image(final GuiManager manager, final MemoryStack stack, final Texture texture, final float x, final float y) {
-    final NkColor colour = NkColor.mallocStack(stack);
+    final NkColor colour = NkColor.malloc(stack);
     nk_rgb(255, 255, 255, colour);
 
-    final NkRect rect = NkRect.mallocStack(stack);
+    final NkRect rect = NkRect.malloc(stack);
     nk_rect(x, y, texture.width, texture.height, rect);
 
-    final NkImage image = NkImage.mallocStack(stack);
+    final NkImage image = NkImage.malloc(stack);
     nk_image_id(texture.id, image);
     nk_draw_image(nk_window_get_canvas(manager.ctx), rect, image, colour);
   }

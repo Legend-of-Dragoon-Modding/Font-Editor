@@ -10,7 +10,9 @@ import org.lwjgl.nuklear.NkDrawCommand;
 import org.lwjgl.nuklear.NkDrawNullTexture;
 import org.lwjgl.nuklear.NkDrawVertexLayoutElement;
 import org.lwjgl.nuklear.NkMouse;
+import org.lwjgl.nuklear.NkPluginFilterI;
 import org.lwjgl.nuklear.NkVec2;
+import org.lwjgl.nuklear.Nuklear;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.Platform;
 
@@ -81,6 +83,7 @@ import static org.lwjgl.nuklear.Nuklear.NK_VERTEX_POSITION;
 import static org.lwjgl.nuklear.Nuklear.NK_VERTEX_TEXCOORD;
 import static org.lwjgl.nuklear.Nuklear.nk__draw_begin;
 import static org.lwjgl.nuklear.Nuklear.nk__draw_next;
+import static org.lwjgl.nuklear.Nuklear.nk_buffer_clear;
 import static org.lwjgl.nuklear.Nuklear.nk_buffer_free;
 import static org.lwjgl.nuklear.Nuklear.nk_buffer_init;
 import static org.lwjgl.nuklear.Nuklear.nk_buffer_init_fixed;
@@ -169,12 +172,16 @@ import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.system.MemoryUtil.memAddress;
+import static org.lwjgl.system.MemoryUtil.memAddressSafe;
 import static org.lwjgl.system.MemoryUtil.memCopy;
 import static org.lwjgl.system.MemoryUtil.nmemAllocChecked;
 import static org.lwjgl.system.MemoryUtil.nmemFree;
 
 public class GuiManager {
   private static final Logger LOGGER = LogManager.getLogger(GuiManager.class.getName());
+
+  public static final long FILTER_ASCII = memAddressSafe((NkPluginFilterI)Nuklear::nnk_filter_ascii);
+  public static final long FILTER_DECIMAL = memAddressSafe((NkPluginFilterI)Nuklear::nnk_filter_decimal);
 
   private static final int MAX_VERTEX_BUFFER = 512 * 1024;
   private static final int MAX_ELEMENT_BUFFER = 128 * 1024;
@@ -255,18 +262,19 @@ public class GuiManager {
         final String string = window.getClipboardString();
 
         if(!string.isEmpty()) {
-          final MemoryStack stack = stackGet();
-          final int stackPointer = stack.getPointer();
-          final long text;
+          try(final MemoryStack stack = stackGet()) {
+            final int stackPointer = stack.getPointer();
+            final long text;
 
-          try {
-            stack.nUTF8(string, true);
-            text = stack.getPointerAddress();
-          } finally {
-            stack.setPointer(stackPointer);
+            try {
+              stack.nUTF8(string, true);
+              text = stack.getPointerAddress();
+            } finally {
+              stack.setPointer(stackPointer);
+            }
+
+            nnk_textedit_paste(edit, text, nnk_strlen(text));
           }
-
-          nnk_textedit_paste(edit, text, nnk_strlen(text));
         }
       });
 
@@ -446,11 +454,11 @@ public class GuiManager {
       final ByteBuffer elements = Objects.requireNonNull(glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY, MAX_ELEMENT_BUFFER, null));
       try(final MemoryStack stack = stackPush()) {
         // fill convert configuration
-        final NkConvertConfig config = NkConvertConfig.callocStack(stack)
+        final NkConvertConfig config = NkConvertConfig.calloc(stack)
           .vertex_layout(VERTEX_LAYOUT)
           .vertex_size(20)
           .vertex_alignment(4)
-          .null_texture(this.nullTexture)
+          .tex_null(this.nullTexture)
           .circle_segment_count(22)
           .curve_segment_count(22)
           .arc_segment_count(22)
@@ -459,8 +467,8 @@ public class GuiManager {
           .line_AA(NK_ANTI_ALIASING_ON);
 
         // setup buffers to load vertices and elements
-        final NkBuffer vbuf = NkBuffer.mallocStack(stack);
-        final NkBuffer ebuf = NkBuffer.mallocStack(stack);
+        final NkBuffer vbuf = NkBuffer.malloc(stack);
+        final NkBuffer ebuf = NkBuffer.malloc(stack);
 
         nk_buffer_init_fixed(vbuf, vertices/*, max_vertex_buffer*/);
         nk_buffer_init_fixed(ebuf, elements/*, max_element_buffer*/);
@@ -489,6 +497,7 @@ public class GuiManager {
         offset += cmd.elem_count() * 2L;
       }
       nk_clear(this.ctx);
+      nk_buffer_clear(this.cmds);
     }
 
     // default OpenGL state

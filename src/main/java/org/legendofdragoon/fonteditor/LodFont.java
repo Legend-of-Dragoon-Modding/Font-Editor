@@ -53,11 +53,11 @@ public class LodFont {
       }
     }
 
-    public int unknown() {
+    public int ticksPerFrame() {
       return MathHelper.get(LodFont.this.data, this.offset + 2, 1);
     }
 
-    public void unknown(final int value) {
+    public void ticksPerFrame(final int value) {
       MathHelper.set(LodFont.this.data, this.offset + 2, 1, value);
     }
   }
@@ -133,19 +133,19 @@ public class LodFont {
       MathHelper.set(LodFont.this.data, this.offset + 0xa, 2, value);
     }
 
-    public int unknown1() {
+    public int widthScale() {
       return MathHelper.get(LodFont.this.data, this.offset + 0x10, 2);
     }
 
-    public void unknown1(final int value) {
+    public void widthScale(final int value) {
       MathHelper.set(LodFont.this.data, this.offset + 0x10, 2, value);
     }
 
-    public int unknown2() {
+    public int heightScale() {
       return MathHelper.get(LodFont.this.data, this.offset + 0x12, 2);
     }
 
-    public void unknown2(final int value) {
+    public void heightScale(final int value) {
       MathHelper.set(LodFont.this.data, this.offset + 0x12, 2, value);
     }
   }

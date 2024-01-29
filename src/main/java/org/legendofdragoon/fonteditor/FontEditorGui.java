@@ -1,7 +1,8 @@
-package org.legendofdragoon.fonteditor.opengl;
+package org.legendofdragoon.fonteditor;
 
-import org.legendofdragoon.fonteditor.LodFont;
-import org.legendofdragoon.fonteditor.MathHelper;
+import org.legendofdragoon.fonteditor.opengl.Gui;
+import org.legendofdragoon.fonteditor.opengl.GuiManager;
+import org.legendofdragoon.fonteditor.opengl.Texture;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryStack;
 
@@ -26,8 +27,8 @@ public class FontEditorGui extends Gui {
   private final ByteBuffer metricsIndexText = BufferUtils.createByteBuffer(9);
   private final IntBuffer metricsIndexLength = BufferUtils.createIntBuffer(1);
 
-  private final ByteBuffer unknown0Text = BufferUtils.createByteBuffer(9);
-  private final IntBuffer unknown0Length = BufferUtils.createIntBuffer(1);
+  private final ByteBuffer ticksPerFrameText = BufferUtils.createByteBuffer(9);
+  private final IntBuffer ticksPerFrameLength = BufferUtils.createIntBuffer(1);
 
   private final ByteBuffer uText = BufferUtils.createByteBuffer(9);
   private final IntBuffer uLength = BufferUtils.createIntBuffer(1);
@@ -45,10 +46,10 @@ public class FontEditorGui extends Gui {
   private final IntBuffer clutLength = BufferUtils.createIntBuffer(1);
   private final ByteBuffer tpageText = BufferUtils.createByteBuffer(9);
   private final IntBuffer tpageLength = BufferUtils.createIntBuffer(1);
-  private final ByteBuffer unknown1Text = BufferUtils.createByteBuffer(9);
-  private final IntBuffer unknown1Length = BufferUtils.createIntBuffer(1);
-  private final ByteBuffer unknown2Text = BufferUtils.createByteBuffer(9);
-  private final IntBuffer unknown2Length = BufferUtils.createIntBuffer(1);
+  private final ByteBuffer widthScaleText = BufferUtils.createByteBuffer(9);
+  private final IntBuffer widthScaleLength = BufferUtils.createIntBuffer(1);
+  private final ByteBuffer heightScaleText = BufferUtils.createByteBuffer(9);
+  private final IntBuffer heightScaleLength = BufferUtils.createIntBuffer(1);
 
   public FontEditorGui(final LodFont font, final Texture texture) {
     this.lodFont = font;
@@ -57,12 +58,12 @@ public class FontEditorGui extends Gui {
     this.displayGlyph(this.glyphIndex, this.metricsIndex);
   }
 
-  public void scrollGlyph(final long amount) {
-    this.displayGlyph(Math.floorMod(this.glyphIndex + (int)amount, this.lodFont.entryCount()), 0);
+  public void scrollGlyph(final int amount) {
+    this.displayGlyph(Math.floorMod(this.glyphIndex + amount, this.lodFont.entryCount()), 0);
   }
 
-  public void scrollMetrics(final long amount) {
-    this.displayGlyph(this.glyphIndex, Math.floorMod(this.metricsIndex + (int)amount, this.lodFont.entries[this.glyphIndex].metrics.length));
+  public void scrollMetrics(final int amount) {
+    this.displayGlyph(this.glyphIndex, Math.floorMod(this.metricsIndex + amount, this.lodFont.entries[this.glyphIndex].metrics.length));
   }
 
   private void displayGlyph(final int glyphIndex, final int metricsIndex) {
@@ -75,7 +76,7 @@ public class FontEditorGui extends Gui {
     this.setBufferText(this.glyphIndexText, this.glyphIndexLength, String.valueOf(glyphIndex));
     this.setBufferText(this.metricsIndexText, this.metricsIndexLength, String.valueOf(metricsIndex));
 
-    this.setBufferText(this.unknown0Text, this.unknown0Length, String.valueOf(this.glyph.unknown()));
+    this.setBufferText(this.ticksPerFrameText, this.ticksPerFrameLength, String.valueOf(this.glyph.ticksPerFrame()));
 
     this.setBufferText(this.uText, this.uLength, String.valueOf(this.metrics.u()));
     this.setBufferText(this.vText, this.vLength, String.valueOf(this.metrics.v()));
@@ -83,10 +84,10 @@ public class FontEditorGui extends Gui {
     this.setBufferText(this.yText, this.yLength, String.valueOf(this.metrics.y()));
     this.setBufferText(this.wText, this.wLength, String.valueOf(this.metrics.width()));
     this.setBufferText(this.hText, this.hLength, String.valueOf(this.metrics.height()));
-    this.setBufferText(this.clutText, this.clutLength, String.valueOf(this.metrics.clut()));
-    this.setBufferText(this.tpageText, this.tpageLength, String.valueOf(this.metrics.tpage()));
-    this.setBufferText(this.unknown1Text, this.unknown1Length, String.valueOf(this.metrics.unknown1()));
-    this.setBufferText(this.unknown2Text, this.unknown2Length, String.valueOf(this.metrics.unknown2()));
+    this.setBufferText(this.clutText, this.clutLength, "0x" + Integer.toHexString(this.metrics.clut()));
+    this.setBufferText(this.tpageText, this.tpageLength, "0x" + Integer.toHexString(this.metrics.tpage()));
+    this.setBufferText(this.widthScaleText, this.widthScaleLength, "0x" + Integer.toHexString(this.metrics.widthScale()));
+    this.setBufferText(this.heightScaleText, this.heightScaleLength, "0x" + Integer.toHexString(this.metrics.heightScale()));
   }
 
   private void save() {
@@ -171,13 +172,13 @@ public class FontEditorGui extends Gui {
 
       this.row(manager, 30.0f, 4, row -> {
         row.nextColumn(0.05f);
-        this.label(manager, "?:", TextAlign.RIGHT);
+        this.label(manager, "Ticks:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        final int res = this.numberbox(manager, this.unknown0Text, this.unknown0Length, 8);
+        final int res = this.numberbox(manager, this.ticksPerFrameText, this.ticksPerFrameLength, 8);
 
         if((res & NK_EDIT_COMMITED) != 0) {
-          this.glyph.unknown(this.getInt(this.getBufferText(this.unknown0Text, this.unknown0Length)));
+          this.glyph.ticksPerFrame(this.getInt(this.getBufferText(this.ticksPerFrameText, this.ticksPerFrameLength)));
         }
 
         row.nextColumn(0.5f);
@@ -275,23 +276,23 @@ public class FontEditorGui extends Gui {
 
       this.row(manager, 30.0f, 4, row -> {
         row.nextColumn(0.05f);
-        this.label(manager, "?1:", TextAlign.RIGHT);
+        this.label(manager, "WScale:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        final int u1Res = this.numberbox(manager, this.unknown1Text, this.unknown1Length, 8);
+        final int u1Res = this.numberbox(manager, this.widthScaleText, this.widthScaleLength, 8);
 
         if((u1Res & NK_EDIT_COMMITED) != 0) {
-          this.metrics.unknown1(this.getInt(this.getBufferText(this.unknown1Text, this.unknown1Length)));
+          this.metrics.widthScale(this.getInt(this.getBufferText(this.widthScaleText, this.widthScaleLength)));
         }
 
         row.nextColumn(0.05f);
-        this.label(manager, "?2:", TextAlign.RIGHT);
+        this.label(manager, "HScale:", TextAlign.RIGHT);
 
         row.nextColumn(0.45f);
-        final int u2Res = this.numberbox(manager, this.unknown2Text, this.unknown2Length, 8);
+        final int u2Res = this.numberbox(manager, this.heightScaleText, this.heightScaleLength, 8);
 
         if((u2Res & NK_EDIT_COMMITED) != 0) {
-          this.metrics.unknown2(this.getInt(this.getBufferText(this.unknown2Text, this.unknown2Length)));
+          this.metrics.heightScale(this.getInt(this.getBufferText(this.heightScaleText, this.heightScaleLength)));
         }
       });
 

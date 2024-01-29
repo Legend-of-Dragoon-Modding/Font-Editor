@@ -46,6 +46,7 @@ import static org.lwjgl.glfw.GLFW.glfwSetCharCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetClipboardString;
 import static org.lwjgl.glfw.GLFW.glfwSetCursorPos;
 import static org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback;
+import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetInputMode;
 import static org.lwjgl.glfw.GLFW.glfwSetKeyCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback;
@@ -66,23 +67,21 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 public class Window {
   private static final Logger LOGGER = LogManager.getLogger(Window.class.getName());
 
-  private static final GLFWErrorCallback ERROR_CALLBACK;
-
   static {
     LOGGER.info("Initialising LWJGL version {}", Version.getVersion());
 
-    ERROR_CALLBACK = GLFWErrorCallback.createPrint(System.err).set();
+    GLFWErrorCallback.createPrint(System.err).set();
 
     if(!glfwInit()) {
       throw new IllegalStateException("Unable to initialize GLFW");
     }
+  }
 
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      LOGGER.info("Shutting down...");
+  public static void free() {
+    LOGGER.info("Shutting down...");
 
-      glfwTerminate();
-      ERROR_CALLBACK.free();
-    }));
+    glfwSetErrorCallback(null).free();
+    glfwTerminate();
   }
 
   private final long window;
@@ -93,8 +92,6 @@ public class Window {
   private int width;
   private int height;
   private float scale = 1.0f;
-
-  private int fpsLimit = Integer.MAX_VALUE;
 
   public Window(final String title, final int width, final int height) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -151,12 +148,16 @@ public class Window {
     this.eventPoller = poller;
   }
 
-  public void setFpsLimit(final int limit) {
-    this.fpsLimit = limit;
-  }
-
   public void show() {
     glfwShowWindow(this.window);
+
+    try(final MemoryStack stack = MemoryStack.stackPush()) {
+      final IntBuffer x = stack.mallocInt(1);
+      final IntBuffer y = stack.mallocInt(1);
+      glfwGetWindowSize(this.window, x, y);
+
+      this.events.onResize(this.window, x.get(0), y.get(0));
+    }
   }
 
   public void close() {
@@ -209,23 +210,11 @@ public class Window {
   }
 
   public void run() {
-    long timer = System.nanoTime() + 1_000_000_000 / this.fpsLimit;
-
     while(!glfwWindowShouldClose(this.window)) {
       this.eventPoller.run();
       this.events.onDraw();
 
       glfwSwapBuffers(this.window);
-
-      if(this.fpsLimit != Integer.MAX_VALUE) {
-        while(System.nanoTime() <= timer) {
-          try {
-            Thread.sleep(0);
-          } catch(final InterruptedException e) { }
-        }
-
-        timer = System.nanoTime() + 1_000_000_000 / this.fpsLimit;
-      }
     }
 
     glfwFreeCallbacks(this.window);
